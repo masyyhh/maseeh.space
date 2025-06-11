@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Start the server and listen for incoming requests
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+app.listen(3000, '0.0.0.0', () => {
+    console.log("Server is running on port 3000");
+  });
+  
