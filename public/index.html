@@ -18,7 +18,6 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Style for the flip-card animation effect on the countdown */
         .timer-box {
             position: relative;
             perspective: 1000px;
@@ -81,74 +80,110 @@
                 <p class="mb-4 text-gray-300">Get notified when we launch!</p>
                 <form id="notify-form" class="flex flex-col sm:flex-row gap-3">
                     <input type="email" id="email-input" placeholder="Enter your email" class="w-full px-5 py-3 rounded-md bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300" required>
-                    <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition duration-300 shrink-0">
+                    <button type="submit" id="submit-button" class="w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition duration-300 shrink-0">
                         Notify Me
                     </button>
                 </form>
             </div>
             
-            <!-- Success Message -->
-            <div id="success-message" class="hidden max-w-md mx-auto mt-4 p-4 rounded-md bg-green-500/20 text-green-300 border border-green-500/30">
-                Thank you! We'll notify you at launch.
-            </div>
+            <!-- Message Area -->
+            <div id="message-area" class="max-w-md mx-auto mt-4 p-4 rounded-md hidden"></div>
         </div>
 
     </main>
 
     <script>
         // --- Countdown Timer Logic ---
-
-        // SET YOUR LAUNCH DATE HERE
-        const launchDate = new Date('Nov 3, 2025 00:00:00').getTime();
-
-        // Get elements
+        const launchDate = new Date('Jan 1, 2026 00:00:00').getTime();
         const daysEl = document.getElementById('days');
         const hoursEl = document.getElementById('hours');
         const minutesEl = document.getElementById('minutes');
         const secondsEl = document.getElementById('seconds');
-
-        // Update the countdown every second
         const countdownInterval = setInterval(() => {
-            // Get today's date and time
             const now = new Date().getTime();
-
-            // Find the distance between now and the launch date
             const distance = launchDate - now;
-
-            // Time calculations for days, hours, minutes and seconds
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
             const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            // Display the result in the elements, adding a leading zero if needed
             daysEl.innerHTML = days < 10 ? '0' + days : days;
             hoursEl.innerHTML = hours < 10 ? '0' + hours : hours;
             minutesEl.innerHTML = minutes < 10 ? '0' + minutes : minutes;
             secondsEl.innerHTML = seconds < 10 ? '0' + seconds : seconds;
-
-            // If the countdown is finished, write some text
             if (distance < 0) {
                 clearInterval(countdownInterval);
                 document.getElementById('countdown').innerHTML = '<div class="text-4xl font-bold">WE ARE LIVE!</div>';
             }
         }, 1000);
 
-        // --- Notification Form Logic ---
+        // --- Notification Form Logic (Updated) ---
         const notifyForm = document.getElementById('notify-form');
         const formContainer = document.getElementById('form-container');
-        const successMessage = document.getElementById('success-message');
-        
-        notifyForm.addEventListener('submit', (e) => {
-            e.preventDefault(); // Prevent actual form submission
+        const messageArea = document.getElementById('message-area');
+        const submitButton = document.getElementById('submit-button');
+
+        notifyForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent default form submission
             
             const emailInput = document.getElementById('email-input');
-            if(emailInput.value && emailInput.checkValidity()) {
-                 // Hide the form and show the success message
-                formContainer.style.display = 'none';
-                successMessage.classList.remove('hidden');
+            const email = emailInput.value;
+
+            if (!email || !emailInput.checkValidity()) {
+                // Show an error message if email is invalid
+                showMessage('Please enter a valid email address.', 'error');
+                return;
+            }
+
+            // Disable button to prevent multiple submissions
+            submitButton.disabled = true;
+            submitButton.textContent = 'Sending...';
+
+            try {
+                const response = await fetch('/notify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: email }),
+                });
+
+                if (response.ok) {
+                    // On success, hide the form and show a success message
+                    formContainer.style.display = 'none';
+                    showMessage('Thank you! We\'ll notify you at launch.', 'success');
+                } else {
+                    // On failure, show an error message
+                    showMessage('Something went wrong. Please try again.', 'error');
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Notify Me';
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                showMessage('An error occurred. Please check your connection and try again.', 'error');
+                submitButton.disabled = false;
+                submitButton.textContent = 'Notify Me';
             }
         });
+
+        function showMessage(text, type) {
+            messageArea.textContent = text;
+            messageArea.className = 'max-w-md mx-auto mt-4 p-4 rounded-md'; // Reset classes
+            if (type === 'success') {
+                messageArea.classList.add('bg-green-500/20', 'text-green-300', 'border', 'border-green-500/30');
+            } else {
+                messageArea.classList.add('bg-red-500/20', 'text-red-300', 'border', 'border-red-500/30');
+            }
+            messageArea.classList.remove('hidden');
+        }
+
+          // This script should be placed inside your HTML file or linked as a separate JS file.
+    // It will send a request to your backend to notify about traffic whenever the page loads.
+        window.onload = function() {
+            fetch('/track-traffic')
+                .then(response => response.json())
+                .then(data => console.log('Traffic notification response:', data))
+                .catch(error => console.error('Error tracking traffic:', error));
+        };
     </script>
 
 </body>
