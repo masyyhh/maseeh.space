@@ -51,7 +51,6 @@ app.get('/', (req, res) => {
 *Time:* ${visitTime}
 
 *Total Visits:* ${visitCount}
-*Unique Visitors:* ${uniqueIPs.size}
         `;
 
         const telegramApiUrl = `https://api.telegram.org/bot${VISITOR_BOT_TOKEN}/sendMessage`;
@@ -81,7 +80,7 @@ app.post('/notify', async (req, res) => {
         return res.status(400).json({ message: 'Email is required.' });
     }
 
-    const message = `🚀 New subscriber for the launch!\n\nEmail: ${email}\n\n🌍 Unique Visitors: ${uniqueIPs.size}`;
+    const message = `🚀 New subscriber for the launch!\n\nEmail: ${email}\n\n🌍`;
     const telegramApiUrl = `https://api.telegram.org/bot${SUBSCRIBER_BOT_TOKEN}/sendMessage`;
 
     try {
