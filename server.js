@@ -5,7 +5,7 @@ const UAParser = require('ua-parser-js');
 require('dotenv').config();
 
 const app = express();
-app.set('trust proxy', 1);
+app.set('trust proxy', 'loopback');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
