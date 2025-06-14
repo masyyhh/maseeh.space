@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const axios = require('axios');
+const UAParser = require('ua-parser-js');
 require('dotenv').config();
 
 const app = express();
@@ -19,18 +20,18 @@ if (!VISITOR_BOT_TOKEN || !VISITOR_CHAT_ID || !SUBSCRIBER_BOT_TOKEN || !SUBSCRIB
     process.exit(1);
 }
 
-// Track visits and unique users
+// Track visits
 let visitCount = 0;
-const uniqueIPs = new Set();
 
 // Route to track homepage visits
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
     try {
         const ip = req.ip;
         const userAgent = req.headers['user-agent'] || 'Not available';
+        const parser = new UAParser(userAgent);
+        const uaResult = parser.getResult();
 
         visitCount++;
-        uniqueIPs.add(ip);
 
         const visitTime = new Date().toLocaleString('en-US', {
             timeZone: 'Indian/Maldives',
@@ -43,11 +44,52 @@ app.get('/', (req, res) => {
             second: '2-digit'
         });
 
-        const message = `
-*Visitor Alert!* 🌐
+        // --- ENHANCED INFORMATION GATHERING ---
+
+        // 1. Get Geolocation from IP
+        let geoData = {
+            country: 'N/A',
+            city: 'N/A',
+            isp: 'N/A'
+        };
+        if (ip !== '::1' && ip !== '127.0.0.1') { // Don't lookup localhost
+            try {
+                const geoResponse = await axios.get(`http://ip-api.com/json/${ip}`);
+                if (geoResponse.data.status === 'success') {
+                    geoData = {
+                        country: geoResponse.data.country || 'N/A',
+                        city: geoResponse.data.city || 'N/A',
+                        isp: geoResponse.data.isp || 'N/A'
+                    };
+                }
+            } catch (error) {
+                console.error('Failed to fetch geolocation data:', error.message);
+            }
+        } else {
+            geoData.city = 'Localhost';
+        }
+
+
+        // 2. Parse User-Agent
+        const browser = `${uaResult.browser.name || 'N/A'} ${uaResult.browser.version || ''}`.trim();
+        const os = `${uaResult.os.name || 'N/A'} ${uaResult.os.version || ''}`.trim();
+        const device = uaResult.device.vendor ? `${uaResult.device.vendor} ${uaResult.device.model}` : (uaResult.device.type || 'Desktop');
+
+        // 3. Simple Bot Detection
+        const isBot = /bot|crawl|spider/i.test(userAgent);
+
+
+        // --- CONSTRUCTING THE NEW MESSAGE ---
+
+        let message = `
+*Visitor Alert!* ${isBot ? '🤖 (Bot Detected)' : '🌐'}
 -----------------------------------
+*Location:* ${geoData.city}, ${geoData.country}
 *IP Address:* \`${ip}\`
-*Device/Browser:* \`${userAgent}\`
+*ISP:* ${geoData.isp}
+*Device:* ${device}
+*OS:* ${os}
+*Browser:* ${browser}
 *Time:* ${visitTime}
 
 *Total Visits:* ${visitCount}

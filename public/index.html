@@ -29,9 +29,10 @@
       -webkit-backdrop-filter: blur(12px);
       padding: 1.5rem 1rem;
       transition: all 0.3s ease-in-out;
-      /* Added for better responsiveness on small screens */
-      min-width: 120px; /* Ensure boxes don't get too small */
+      /* Ensure boxes can shrink but have a minimum size */
+      min-width: 60px; /* Reduced min-width to allow more horizontal space for all four boxes */
       flex-grow: 1; /* Allow boxes to grow within flex container */
+      flex-shrink: 1; /* Allow boxes to shrink */
     }
 
     .timer-box:hover {
@@ -74,18 +75,24 @@
     }
 
     @media (max-width: 639px) { /* Small screens, below sm breakpoint */
-      .timer-box {
-        width: calc(50% - 1rem); /* Two boxes per row, with gap */
-        max-width: 180px; /* Prevent them from becoming too wide on smaller tablet portrait */
-      }
+      /* Changed countdown to flex-nowrap to force a single row */
       #countdown {
-        gap: 0.5rem; /* Reduce gap on very small screens */
+        flex-wrap: nowrap; /* Forces items into a single line */
+        gap: 0.5rem; /* Reduced gap for tighter fit on small screens */
+        overflow-x: auto; /* Adds horizontal scrolling if content overflows, but aim to fit */
+        padding-bottom: 5px; /* Add slight padding for scrollbar if it appears */
+      }
+
+      .timer-box {
+        /* Removed width/max-width to let flexbox distribute space */
+        padding: 1rem 0.5rem; /* Adjusted padding to make boxes narrower */
+        min-width: 75px; /* Set a slightly larger min-width to ensure readability */
       }
       .timer-box .text-4xl { /* Adjust font size for very small screens */
-        font-size: 2.5rem; /* 40px */
+        font-size: 2rem; /* Reduced font size for better fit */
       }
       .timer-box .text-sm {
-        font-size: 0.75rem; /* 12px */
+        font-size: 0.65rem; /* Reduced font size for labels */
       }
     }
 
